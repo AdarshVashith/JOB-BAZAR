@@ -7,6 +7,7 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     // First, try to get user from localStorage (for immediate display after signup)
@@ -52,8 +53,8 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="dashboard">
+      <div className="dashboard-wrapper">
+        <div className="loading-container">
           <p className="loading">Loading...</p>
         </div>
       </div>
@@ -61,26 +62,43 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container">
-      <div className="dashboard">
-        <h2>Welcome User</h2>
-        
-        {error && <div className="error">{error}</div>}
-
-        {user && (
-          <div className="user-info">
-            <p>
-              <strong>Name:</strong> {user.name}
-            </p>
-            <p>
-              <strong>Email:</strong> {user.email}
-            </p>
+    <div className="dashboard-wrapper">
+      {/* Navbar */}
+      <nav className="dashboard-navbar">
+        <div className="navbar-container">
+          <div className="navbar-logo">
+            <h1 className="logo-text">JOB BAZAR</h1>
           </div>
-        )}
+          
+          <div className="navbar-user">
+            <div className="user-profile-btn" onClick={() => setShowDropdown(!showDropdown)}>
+              <div className="user-avatar">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <span className="user-name">{user?.name || 'User'}</span>
+              <span className="dropdown-arrow">▼</span>
+            </div>
 
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
+            {/* Dropdown Menu */}
+            {showDropdown && (
+              <div className="dropdown-menu">
+                <div className="dropdown-header">
+                  <strong>{user?.name}</strong>
+                  <p className="user-email">{user?.email}</p>
+                </div>
+                <hr className="dropdown-divider" />
+                <button className="dropdown-logout-btn" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content Area - Ready for your content */}
+      <div className="dashboard-content">
+        {/* Add your content here */}
       </div>
     </div>
   );

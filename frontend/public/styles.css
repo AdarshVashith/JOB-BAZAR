@@ -6,7 +6,7 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #234cff 0%);
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -55,14 +55,14 @@ input {
 
 input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #0e3aff;
   box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
 }
 
 button {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2449eb );
   color: white;
   border: none;
   border-radius: 5px;
@@ -105,7 +105,7 @@ button:active {
 }
 
 .form-footer a {
-  color: #667eea;
+  color: #1e47ff;
   text-decoration: none;
   font-weight: 600;
   cursor: pointer;
@@ -152,6 +152,6 @@ button:active {
 }
 
 .loading {
-  color: #667eea;
+  color: #173ff0;
   font-weight: 600;
 }

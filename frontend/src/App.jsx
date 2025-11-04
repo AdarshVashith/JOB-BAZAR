@@ -6,9 +6,14 @@ import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
+  const isAuthPage = () => {
+    const path = window.location.pathname;
+    return path === '/login' || path === '/signup';
+  };
+
   return (
     <BrowserRouter>
-      <h1 className="page-heading">JOB BAZAR</h1>
+      {isAuthPage() && <h1 className="page-heading">JOB BAZAR</h1>}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

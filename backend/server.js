@@ -6,11 +6,14 @@ const connectDB = require('./config/db');
 // Load env variables
 dotenv.config({ path: './.env' });
 
-// Connect to database
-connectDB();
-
 // Initialize express app
 const app = express();
+
+// Connect to database
+connectDB().catch(err => {
+  console.error('Failed to connect to database:', err);
+  process.exit(1);
+});
 
 // Middleware
 app.use(cors({
@@ -51,6 +54,10 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

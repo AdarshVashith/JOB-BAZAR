@@ -27,7 +27,18 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 
-// Health check endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'JOB-BAZAR API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      health: '/api/health'
+    }
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,

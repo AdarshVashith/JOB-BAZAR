@@ -3,13 +3,11 @@ services:
     name: job-bazar-backend
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    buildCommand: npm install --prefix backend
+    startCommand: npm start --prefix backend
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
       - key: MONGODB_URI
         fromDatabase:
           name: job-bazar-db
@@ -17,7 +15,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://your-frontend-domain.onrender.com
+        value: http://localhost:3000
 
 databases:
   - name: job-bazar-db

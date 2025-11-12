@@ -18,7 +18,6 @@ services:
         generateValue: true
       - key: CORS_ORIGIN
         value: https://your-frontend-domain.onrender.com
-        sync: false
 
 databases:
   - name: job-bazar-db

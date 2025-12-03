@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardNavbar from '../../../components/DashboardNavbar';
+import API from '@/lib/api';
 import Sidebar from '../../../components/Sidebar';
 
 export default function HRApplications() {
@@ -35,18 +36,27 @@ export default function HRApplications() {
       console.log('HR ID:', hrId);
 
       // First get HR's jobs, then get applications for those jobs
-      const jobsRes = await fetch(`http://localhost:8000/api/jobs/hr/${hrId}`);
+      const jobsRes = await fetch(`${API}/api/jobs/hr/${hrId}`);
       if (jobsRes.ok) {
-        const jobs = await jobsRes.json();
+        const data = await jobsRes.json();
+        const jobs = data.jobs || data || [];
         console.log('HR Jobs:', jobs);
+        
+        // Ensure jobs is an array
+        if (!Array.isArray(jobs)) {
+          console.error('Jobs data is not an array:', jobs);
+          setApplications([]);
+          return;
+        }
         
         // Get all applications for HR's jobs
         const allApplications = [];
         for (const job of jobs) {
           console.log(`Fetching applications for job ${job.id}:`, job.title);
-          const appRes = await fetch(`http://localhost:8000/api/jobs/${job.id}/applications`);
+          const appRes = await fetch(`${API}/api/jobs/${job.id}/applications`);
           if (appRes.ok) {
-            const jobApplications = await appRes.json();
+            const appData = await appRes.json();
+            const jobApplications = appData.applications || appData || [];
             console.log(`Applications for job ${job.id}:`, jobApplications);
             allApplications.push(...jobApplications);
           } else {
@@ -67,7 +77,7 @@ export default function HRApplications() {
 
   const updateApplicationStatus = async (applicationId, status, response = '') => {
     try {
-      const res = await fetch(`http://localhost:8000/api/jobs/applications/${applicationId}/status`, {
+      const res = await fetch(`${API}/api/jobs/applications/${applicationId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, response })

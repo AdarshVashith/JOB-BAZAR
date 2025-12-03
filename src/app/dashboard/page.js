@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardNavbar from '../../components/DashboardNavbar';
+import API from '@/lib/api';
 import Sidebar from '../../components/Sidebar';
 
 export default function Dashboard() {
@@ -32,11 +33,12 @@ export default function Dashboard() {
     try {
       if (role === 'candidate') {
         // Fetch recent jobs for candidates
-        const jobsRes = await fetch('http://localhost:8000/api/jobs/');
+        const jobsRes = await fetch(`${API}/api/jobs/?limit=6`);
         if (jobsRes.ok) {
-          const jobsData = await jobsRes.json();
-          setJobs(jobsData.slice(0, 6)); // Show latest 6 jobs
-          setStats(prev => ({ ...prev, totalJobs: jobsData.length }));
+          const data = await jobsRes.json();
+          const jobsData = data.jobs || data || [];
+          setJobs(jobsData);
+          setStats(prev => ({ ...prev, totalJobs: data.pagination ? data.pagination.total : jobsData.length }));
         }
         
         // Fetch application count
@@ -44,10 +46,11 @@ export default function Dashboard() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const candidateId = payload.userId;
         
-        const appsRes = await fetch(`http://localhost:8000/api/jobs/applications/${candidateId}`);
+        const appsRes = await fetch(`${API}/api/jobs/applications/${candidateId}?limit=50`);
         if (appsRes.ok) {
-          const appsData = await appsRes.json();
-          setStats(prev => ({ ...prev, applications: appsData.length }));
+          const data = await appsRes.json();
+          const appsData = data.applications || data || [];
+          setStats(prev => ({ ...prev, applications: data.pagination ? data.pagination.total : appsData.length }));
         }
       } else {
         // Fetch HR's jobs and applications
@@ -55,9 +58,10 @@ export default function Dashboard() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const hrId = payload.userId;
         
-        const jobsRes = await fetch(`http://localhost:8000/api/jobs/hr/${hrId}`);
+        const jobsRes = await fetch(`${API}/api/jobs/hr/${hrId}?limit=10`);
         if (jobsRes.ok) {
-          const jobsData = await jobsRes.json();
+          const data = await jobsRes.json();
+          const jobsData = data.jobs || data || [];
           setJobs(jobsData.slice(0, 3)); // Show fewer jobs to make room for applications
           
           // Get all applications for HR's jobs
@@ -65,10 +69,12 @@ export default function Dashboard() {
           let totalApplications = 0;
           
           for (const job of jobsData) {
-            const appRes = await fetch(`http://localhost:8000/api/jobs/${job.id}/applications`);
+            const appRes = await fetch(`${API}/api/jobs/${job.id}/applications?limit=5`);
             if (appRes.ok) {
-              const applications = await appRes.json();
-              totalApplications += applications.length;
+              const appData = await appRes.json();
+              const applications = appData.applications || appData || [];
+              const count = appData.pagination ? appData.pagination.total : applications.length;
+              totalApplications += count;
               allApplications.push(...applications.slice(0, 2)); // Get latest 2 per job
             }
           }
@@ -76,7 +82,7 @@ export default function Dashboard() {
           setApplications(allApplications.slice(0, 5)); // Show latest 5 applications
           
           setStats({
-            myJobs: jobsData.length,
+            myJobs: data.pagination ? data.pagination.total : jobsData.length,
             totalApplications: totalApplications,
             activeJobs: jobsData.filter(job => new Date(job.createdAt) > new Date(Date.now() - 30*24*60*60*1000)).length
           });
@@ -93,7 +99,7 @@ export default function Dashboard() {
     const response = prompt(`Enter response message for ${status} application (optional):`);
     
     try {
-      const res = await fetch(`http://localhost:8000/api/jobs/applications/${applicationId}/status`, {
+      const res = await fetch(`${API}/api/jobs/applications/${applicationId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, response: response || '' })
@@ -118,7 +124,7 @@ export default function Dashboard() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const candidateId = payload.userId;
 
-      const res = await fetch(`http://localhost:8000/api/jobs/apply/${jobId}/${candidateId}`, {
+      const res = await fetch(`${API}/api/jobs/apply/${jobId}/${candidateId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

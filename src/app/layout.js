@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Workin",
+  title: "JOB-BAZAAR",
   description: "Your campus marketplace for amazing deals",
 };
 

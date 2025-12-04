@@ -3,8 +3,8 @@
 :root {
   --background: #f3f2ef;
   --foreground: #000000;
-  --linkedin-blue: #0a66c2;
-  --linkedin-dark-blue: #004182;
+  --linkedin-red: #dc2626;
+  --linkedin-dark-red: #991b1b;
 }
 
 @theme inline {

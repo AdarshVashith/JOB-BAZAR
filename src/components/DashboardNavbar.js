@@ -48,10 +48,10 @@ export default function DashboardNavbar() {
     <nav className="bg-white shadow-md border-b border-gray-200 h-14 fixed top-0 left-0 right-0 z-50">
       <div className="h-full px-6 flex justify-between items-center">
         <Link href="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 bg-blue-700 rounded flex items-center justify-center mr-2">
-            <span className="text-white font-bold text-sm">W</span>
+          <div className="w-8 h-8 bg-red-700 rounded flex items-center justify-center mr-2">
+            <span className="text-white font-bold text-sm">J</span>
           </div>
-          <h1 className="text-xl font-semibold text-blue-700">Workin</h1>
+          <h1 className="text-xl font-semibold text-red-700">JOB-BAZAAR</h1>
         </Link>
         
         <div className="flex-1 max-w-md mx-8">
@@ -62,7 +62,7 @@ export default function DashboardNavbar() {
             <input 
               type="text" 
               placeholder="Search jobs, companies..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-md text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-md text-sm focus:bg-white focus:ring-2 focus:ring-red-600 focus:outline-none transition-all"
             />
           </div>
         </div>

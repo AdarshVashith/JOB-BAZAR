@@ -133,26 +133,26 @@ export default function Jobs() {
                 placeholder="Job title or keywords"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <input
                 type="text"
                 placeholder="Location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <input
                 type="text"
                 placeholder="Company"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="">All Job Types</option>
                 <option value="full-time">Full Time</option>
@@ -167,7 +167,7 @@ export default function Jobs() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="createdAt">Date Posted</option>
                   <option value="title">Job Title</option>
@@ -180,7 +180,7 @@ export default function Jobs() {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="desc">Newest First</option>
                   <option value="asc">Oldest First</option>
@@ -188,7 +188,7 @@ export default function Jobs() {
               </div>
               <button
                 onClick={handleSearch}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Search Jobs
               </button>
@@ -221,7 +221,7 @@ export default function Jobs() {
                     <div className="ml-6">
                       <button
                         onClick={() => applyForJob(job.id)}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                       >
                         Apply Now
                       </button>

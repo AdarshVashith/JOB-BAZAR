@@ -6,13 +6,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-blue-600">Workin</h1>
+            <h1 className="text-2xl font-bold text-red-600">JOB-BAZAAR</h1>
           </Link>
           <div className="flex items-center space-x-4">
-            <Link href="/login" className="px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/login" className="px-4 py-2 text-gray-700 hover:text-red-600 transition-colors">
               Login
             </Link>
-            <Link href="/signup" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <Link href="/signup" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
               Sign Up
             </Link>
           </div>

@@ -173,8 +173,8 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="flex items-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6z" />
                       </svg>
                     </div>
@@ -219,8 +219,8 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="flex items-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6z" />
                       </svg>
                     </div>
@@ -273,12 +273,12 @@ export default function Dashboard() {
               
               {/* Quick Actions for HR */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
+                <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow p-6 text-white">
                   <h3 className="text-lg font-semibold mb-2">Post a New Job</h3>
-                  <p className="text-blue-100 mb-4">Create and publish job openings to attract top talent</p>
+                  <p className="text-red-100 mb-4">Create and publish job openings to attract top talent</p>
                   <button
                     onClick={() => router.push('/dashboard/create-job')}
-                    className="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                    className="bg-white text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors font-medium"
                   >
                     Create Job Post
                   </button>
@@ -302,7 +302,7 @@ export default function Dashboard() {
                     <h2 className="text-xl font-semibold text-gray-900">Recent Applications</h2>
                     <button
                       onClick={() => router.push('/dashboard/hr-applications')}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-red-600 hover:text-red-700 font-medium"
                     >
                       View All
                     </button>
@@ -370,7 +370,7 @@ export default function Dashboard() {
                 </h2>
                 <button
                   onClick={() => router.push(userRole === 'candidate' ? '/dashboard/jobs' : '/dashboard/manage-jobs')}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-red-600 hover:text-red-700 font-medium"
                 >
                   View All
                 </button>
@@ -387,7 +387,7 @@ export default function Dashboard() {
                           <p className="text-gray-600 mb-2">{job.company} • {job.location}</p>
                           <p className="text-gray-700 text-sm mb-3">{job.description.substring(0, 150)}...</p>
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{job.type}</span>
+                            <span className="bg-red-100 text-red-800 px-2 py-1 rounded">{job.type}</span>
                             {job.salary && <span>• {job.salary}</span>}
                             <span>• {new Date(job.createdAt).toLocaleDateString()}</span>
                           </div>
@@ -396,7 +396,7 @@ export default function Dashboard() {
                           <div className="ml-4">
                             <button
                               onClick={() => applyForJob(job.id)}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
                             >
                               Apply Now
                             </button>

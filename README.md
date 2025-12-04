@@ -4,8 +4,8 @@ A job seeking platform built with Next.js and Node.js.
 
 ## Live Deployment
 
-- **Frontend**: [https://workin-self.vercel.app/](https://workin-self.vercel.app/)
-- **Backend**: [https://workin-2t5c.onrender.com](https://workin-2t5c.onrender.com)
+- **Frontend**: [https://job-bazar-five.vercel.app/](https://job-bazar-five.vercel.app/)
+- **Backend**: [https://job-bazar-4.onrender.com](https://job-bazar-4.onrender.com)
 
 ## Features
 

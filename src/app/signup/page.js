@@ -18,6 +18,10 @@ export default function Signup() {
     e.preventDefault();
     setError('');
 
+    console.log('🚀 Signup attempt started');
+    console.log('📝 Form data:', { name, email, phoneNumber, role, passwordLength: password.length });
+    console.log('🌐 API URL:', `${API}/api/auth/signup`);
+
     try {
       const res = await fetch(`${API}/api/auth/signup`, {
         method: 'POST',
@@ -25,17 +29,28 @@ export default function Signup() {
         body: JSON.stringify({ name, email, phoneNumber, password, confirmPassword, role }),
       });
 
+      console.log('📡 Response status:', res.status);
+      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
+
       const data = await res.json();
+      console.log('📦 Response data:', data);
 
       if (res.ok) {
-        console.log('User created successfully!');
-        console.log('JWT Token:', data.token);
+        console.log('✅ User created successfully!');
+        console.log('🔑 JWT Token:', data.token);
         router.push('/login');
       } else {
+        console.error('❌ Signup failed:', data.message);
         setError(data.message);
       }
     } catch (err) {
-      setError('Connection error');
+      console.error('🔥 Signup error:', err);
+      console.error('🔥 Error details:', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      });
+      setError('Connection error: ' + err.message);
     }
   };
 

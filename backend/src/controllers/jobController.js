@@ -485,6 +485,10 @@ const deleteApplication = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized to delete this application" });
     }
     
+    if (application.status === 'accepted') {
+      return res.status(400).json({ message: "Cannot delete accepted applications" });
+    }
+    
     await prisma.application.delete({
       where: { id: applicationIdNum }
     });

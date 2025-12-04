@@ -55,6 +55,29 @@ export default function Applications() {
     }
   };
 
+  const deleteApplication = async (applicationId) => {
+    if (!confirm('Are you sure you want to delete this application?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const candidateId = payload.userId;
+      
+      const res = await fetch(`${API}/api/jobs/applications/${applicationId}/${candidateId}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        setApplications(applications.filter(app => app.id !== applicationId));
+      } else {
+        alert('Failed to delete application');
+      }
+    } catch (err) {
+      console.error('Error deleting application:', err);
+      alert('Error deleting application');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -135,9 +158,22 @@ export default function Applications() {
                               <h3 className="text-xl font-semibold text-gray-900 mb-1">{application.job.title}</h3>
                               <p className="text-gray-600 font-medium">{application.job.company}</p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
-                              {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
+                                {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                              </span>
+                              {application.status !== 'accepted' && (
+                                <button
+                                  onClick={() => deleteApplication(application.id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete Application"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

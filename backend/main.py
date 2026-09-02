@@ -131,6 +131,8 @@ async def startup():
 # ---------------------------------------------------
 # Register routers
 # ---------------------------------------------------
+from routes.workflows import router as workflows_router
+
 app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(uploads_router)
@@ -145,6 +147,7 @@ app.include_router(preferences_router)
 app.include_router(orion_router)
 app.include_router(memory_router)
 app.include_router(tools_router)
+app.include_router(workflows_router)
 
 if settings.environment != "production":
     print("REGISTERED ROUTES:")

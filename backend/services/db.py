@@ -137,6 +137,45 @@ CREATE TABLE IF NOT EXISTS assistant_memory (
     pinned BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS workflows (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    nodes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    edges JSONB NOT NULL DEFAULT '[]'::jsonb,
+    is_active BOOLEAN DEFAULT FALSE,
+    webhook_slug TEXT UNIQUE,
+    cron_expression TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_workflows_user ON workflows (user_id);
+CREATE INDEX IF NOT EXISTS idx_workflows_webhook ON workflows (webhook_slug);
+
+CREATE TABLE IF NOT EXISTS workflow_executions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_id UUID REFERENCES workflows(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    trigger_type TEXT NOT NULL DEFAULT 'manual',
+    node_results JSONB DEFAULT '{}'::jsonb,
+    error TEXT,
+    duration_ms INT DEFAULT 0,
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    finished_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_executions_wf ON workflow_executions (workflow_id);
+
+CREATE TABLE IF NOT EXISTS workflow_credentials (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    encrypted_data TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 """
 
 async def init_db():

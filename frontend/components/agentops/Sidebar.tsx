@@ -12,14 +12,16 @@ import {
   Shield,
   Wrench,
   Sparkles,
+  GitBranch,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const items = [
   { label: "Dashboard", icon: LayoutDashboard },
-  { label: "History", icon: History },
+  { label: "Workflows", icon: GitBranch },
   { label: "Orion", icon: Bot },
+  { label: "History", icon: History },
   { label: "Tools", icon: Wrench },
   { label: "Memory", icon: Database },
   { label: "Settings", icon: Settings },

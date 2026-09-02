@@ -9,6 +9,7 @@ import ToolsPage from "@/components/agentops/toolspage";
 import { useAuthStore } from "@/store/authStore";
 import MemoryPage from "@/components/agentops/MemoryPage";
 import OrionPanel from "@/components/orion/OrionPanel";
+import WorkflowCanvas from "@/components/workflows/WorkflowCanvas";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -79,7 +80,8 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-        
+
+        {activePage === "Workflows" && <WorkflowCanvas />}
         {activePage === "Orion" && <OrionPanel />}
         {activePage === "Tools" && <ToolsPage />}
 

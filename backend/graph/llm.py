@@ -310,24 +310,70 @@ async def _call_groq_direct(messages: list[dict], system: str) -> tuple[str, str
     raise RuntimeError("All Groq models failed")
 
 
+def _is_adequate_response(content: str, question: str) -> bool:
+    """
+    Check if the local brain provided a confident, substantive answer.
+    If it's empty, too short, or expresses inability/uncertainty,
+    auto-escalate immediately to the high-capacity Cloud Groq 120B key.
+    """
+    if not content or len(content.strip()) < 15:
+        return False
+
+    c_lower = content.lower().strip()
+
+    inability_patterns = [
+        "i don't know",
+        "i do not know",
+        "i cannot answer",
+        "i can't answer",
+        "i am unable to answer",
+        "i am not sure",
+        "i'm not sure",
+        "i do not have enough information",
+        "i don't have enough information",
+        "as an ai, i cannot",
+        "as a large language model, i cannot",
+        "sorry, i cannot fulfill",
+        "i am unable to assist",
+        "i don't have access to",
+    ]
+
+    for p in inability_patterns:
+        # If the model explicitly says it doesn't know in a brief response
+        if p in c_lower and len(c_lower) < 220:
+            return False
+
+    return True
+
+
 async def call_llm_with_fallback(
     messages: list[dict],
     system: str,
     skip_groq: bool = False,
 ) -> tuple[str, str]:
     """
-    Tiered Hybrid Intelligence:
-    1. Local AI Brain (Ollama) is checked first — Zero API cost, runs on device hardware.
-    2. Cloud Heavy Task Tier (Groq / Gemini / Anthropic) for intense workloads or when local is offline.
+    Intelligent Adaptive Hybrid Routing:
+    1. Local AI Brain (Ollama) answers first for zero API cost.
+    2. If Local Brain is offline OR cannot adequately answer, it automatically
+       escalates to the Cloud Groq Key (120B model) to deliver an authoritative reply.
+    3. Seamless multi-provider waterfall if cloud limits are reached.
     """
+    user_q = messages[-1]["content"] if messages else ""
+
     # ── 1. Try Local Self-Hosted AI Mind First ──
     try:
-        print("[llm] Attempting local AI brain (Ollama)...")
-        return await _call_ollama_local_brain(messages, system)
+        print("[llm] Querying local AI brain (Ollama)...")
+        local_content, local_provider = await _call_ollama_local_brain(messages, system)
+        
+        if _is_adequate_response(local_content, user_q):
+            print(f"[llm] Local brain provided verified response via {local_provider}")
+            return local_content, local_provider
+        else:
+            print("[llm] Local brain returned uncertain/inadequate answer. Auto-escalating to Groq Cloud...")
     except Exception as e:
-        print(f"[llm] Local brain offline or unavailable ({e}), engaging Cloud Heavy Task Cluster...")
+        print(f"[llm] Local brain unavailable ({e}). Engaging Cloud Groq Tier...")
 
-    # ── 2. Cloud API Tier (Groq 120B / Fast Engine) ──
+    # ── 2. Cloud API Tier (Groq 120B / High-Capacity Engine) ──
     if not skip_groq and settings.groq_api_key:
         try:
             return await _call_groq_direct(messages, system)
@@ -350,9 +396,8 @@ async def call_llm_with_fallback(
             continue
 
     # ── 4. Built-in Intelligence Fallback ──
-    user_msg = messages[-1]["content"] if messages else ""
     return (
-        f"I received your inquiry: '{user_msg}'.\n\n"
+        f"I received your inquiry: '{user_q}'.\n\n"
         "Orion is active in autonomous mode. You can ask technical questions, request multi-agent plans, or execute workflows.",
         "orion (local intelligence)",
     )

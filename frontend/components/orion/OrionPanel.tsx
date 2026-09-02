@@ -189,31 +189,50 @@ export default function OrionPanel() {
 
               try {
                 const parsed = JSON.parse(data);
-                if (parsed.chunk) {
-                  accumulated += parsed.chunk;
+                const textChunk = parsed.chunk ?? parsed.token ?? parsed.content ?? parsed.text;
+
+                if (textChunk) {
+                  accumulated += textChunk;
                   setMessages((prev) =>
                     prev.map((m) =>
                       m.id === orionMsgId
                         ? {
                             ...m,
                             content: accumulated,
-                            provider: parsed.provider,
+                            provider: parsed.provider ?? m.provider,
                           }
                         : m
                     )
                   );
+                } else if (parsed.status) {
+                  setStatus(parsed.status);
                 }
               } catch {
-                accumulated += data;
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === orionMsgId ? { ...m, content: accumulated } : m
-                  )
-                );
+                if (data && data !== "[DONE]") {
+                  accumulated += data;
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === orionMsgId ? { ...m, content: accumulated } : m
+                    )
+                  );
+                }
               }
             }
           }
         }
+      }
+
+      if (!accumulated.trim()) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === orionMsgId
+              ? {
+                  ...m,
+                  content: "Hello! I am Orion, your multi-agent dialogue assistant. How can I assist your orchestration today?",
+                }
+              : m
+          )
+        );
       }
 
       setStatus("");

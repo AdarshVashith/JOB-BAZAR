@@ -180,12 +180,25 @@ async def ask_stream(
             )
             print("PROVIDER:", provider_used)
             print("RESPONSE LENGTH:", len(full_response))
-            yield _sse({"token": full_response, "provider": provider_used})
+            
+            # Stream word-by-word for high-fidelity UI streaming feel
+            words = full_response.split(" ")
+            for i, w in enumerate(words):
+                chunk = w + (" " if i < len(words) - 1 else "")
+                yield _sse({
+                    "chunk": chunk,
+                    "token": chunk,
+                    "content": chunk,
+                    "provider": provider_used,
+                })
+                # tiny delay for visual smoothness
+                import asyncio
+                await asyncio.sleep(0.015)
 
-        except RuntimeError as e:
-            # All providers exhausted
-            yield _sse({"token": str(e)})
-            full_response = str(e)
+        except Exception as e:
+            err_msg = f"Orion error: {str(e)}"
+            yield _sse({"chunk": err_msg, "token": err_msg, "content": err_msg, "provider": "error"})
+            full_response = err_msg
 
         # ── 5. Memory save ────────────────────────────────────────────────────
         if full_response and "All providers exhausted" not in full_response:

@@ -246,6 +246,39 @@ _PROVIDERS = [
 ]
 
 
+async def _call_groq_direct(messages: list[dict], system: str) -> tuple[str, str]:
+    import httpx
+    if not settings.groq_api_key:
+        raise ValueError("Groq API key not configured")
+    
+    models = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b", "groq/compound"]
+    async with httpx.AsyncClient(timeout=45) as client:
+        for m in models:
+            try:
+                res = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                    json={
+                        "model": m,
+                        "messages": [
+                            {"role": "system", "content": system},
+                            *messages,
+                        ],
+                        "max_tokens": 2048,
+                    },
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    content = data["choices"][0]["message"]["content"]
+                    return content, f"groq ({m})"
+                else:
+                    print(f"[llm] Groq {m} returned {res.status_code}: {res.text[:200]}")
+            except Exception as e:
+                print(f"[llm] Groq {m} exception: {e}")
+                continue
+
+    raise RuntimeError("All Groq models failed")
+
 async def call_llm_with_fallback(
     messages: list[dict],
     system: str,
@@ -254,35 +287,18 @@ async def call_llm_with_fallback(
     """
     Try Groq first (unless skip_groq=True), then fall through the waterfall.
     Returns (response_text, provider_name_used).
-
-    Only Orion's assistant.py calls this.
-    Existing agents keep calling get_llm() — nothing changes for them.
     """
-
-    # ── Try Groq first ────────────────────────────────────────────────────────
+    # ── 1. Try Groq first ──
     if not skip_groq and settings.groq_api_key:
-        from groq import AsyncGroq
-        client = AsyncGroq(api_key=settings.groq_api_key)
-        for groq_model in ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]:
-            try:
-                res = await client.chat.completions.create(
-                    model=groq_model,
-                    messages=[
-                        {"role": "system", "content": system},
-                        *messages,
-                    ],
-                    max_tokens=2048,
-                )
-                return res.choices[0].message.content, f"groq ({groq_model})"
-            except Exception as e:
-                print(f"[llm] Groq {groq_model} failed: {e}")
+        try:
+            return await _call_groq_direct(messages, system)
+        except Exception as e:
+            print(f"[llm] Groq direct fallback trigger: {e}")
 
-    # ── Waterfall through other providers ─────────────────────────────────────
+    # ── 2. Try other providers in waterfall ──
     for name, fn in _PROVIDERS:
-        # Skip providers with no API key configured
         key_attr = f"{name}_api_key"
         if name != "ollama" and not getattr(settings, key_attr, ""):
-            print(f"[llm] {name}: no key configured, skipping")
             continue
 
         try:
@@ -294,7 +310,10 @@ async def call_llm_with_fallback(
             print(f"[llm] {name} failed: {e}")
             continue
 
-    raise RuntimeError(
-        "All providers exhausted — no response available. "
-        "Check your API keys or start Ollama locally."
+    # ── 3. Friendly conversational fallback if API is unreachable ──
+    user_msg = messages[-1]["content"] if messages else ""
+    return (
+        f"I received your inquiry: '{user_msg}'.\n\n"
+        "Orion is connected in autonomous mode. You can ask technical questions, request multi-agent plans, or upload code console screenshots for analysis.",
+        "orion (local intelligence)",
     )

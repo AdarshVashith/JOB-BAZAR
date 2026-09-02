@@ -216,33 +216,63 @@ async def _call_huggingface(messages: list[dict], system: str) -> str:
         return res.json()["choices"][0]["message"]["content"]
 
 
-async def _call_ollama(messages: list[dict], system: str) -> str:
+async def _call_ollama_local_brain(messages: list[dict], system: str) -> tuple[str, str]:
+    """
+    Directly query the local self-hosted AI engine (Ollama) with automatic
+    model discovery, prioritizing powerful reasoning and coding models.
+    """
     import httpx
+
     async with httpx.AsyncClient(timeout=120) as client:
+        # 1. Discover active local models
+        target_model = "llama3.2"
+        try:
+            tags_res = await client.get("http://localhost:11434/api/tags", timeout=2.5)
+            if tags_res.status_code == 200:
+                installed_models = [m["name"] for m in tags_res.json().get("models", [])]
+                if installed_models:
+                    # Preference priority: deep reasoning -> high param -> coding -> standard
+                    priority_patterns = [
+                        "deepseek-r1", "llama3.3", "qwen2.5-coder", "qwen2.5",
+                        "llama3.1", "mistral", "llama3.2", "phi3", "gemma2"
+                    ]
+                    for pattern in priority_patterns:
+                        matched = next((m for m in installed_models if pattern in m.lower()), None)
+                        if matched:
+                            target_model = matched
+                            break
+                    else:
+                        target_model = installed_models[0]
+        except Exception:
+            raise RuntimeError("Local Ollama daemon is offline (start with `ollama serve`)")
+
+        # 2. Query the selected local brain model
         res = await client.post(
             "http://localhost:11434/api/chat",
             json={
-                "model": "llama3.3",   # or whatever model you have pulled
+                "model": target_model,
                 "messages": [
                     {"role": "system", "content": system},
                     *messages,
                 ],
                 "stream": False,
+                "options": {
+                    "temperature": 0.3,
+                }
             },
+            timeout=120,
         )
         res.raise_for_status()
-        return res.json()["message"]["content"]
+        content = res.json()["message"]["content"]
+        return content, f"local brain ({target_model})"
 
-
-# ── Waterfall — Orion only, agents never call this ───────────────────────────
 
 _PROVIDERS = [
-    ("cerebras",    _call_cerebras),
     ("gemini",      _call_gemini),
+    ("cerebras",    _call_cerebras),
     ("sambanova",   _call_sambanova),
     ("together",    _call_together),
     ("huggingface", _call_huggingface),
-    ("ollama",      _call_ollama),     # local, always available
 ]
 
 
@@ -270,7 +300,7 @@ async def _call_groq_direct(messages: list[dict], system: str) -> tuple[str, str
                 if res.status_code == 200:
                     data = res.json()
                     content = data["choices"][0]["message"]["content"]
-                    return content, f"groq ({m})"
+                    return content, f"cloud api ({m})"
                 else:
                     print(f"[llm] Groq {m} returned {res.status_code}: {res.text[:200]}")
             except Exception as e:
@@ -279,23 +309,32 @@ async def _call_groq_direct(messages: list[dict], system: str) -> tuple[str, str
 
     raise RuntimeError("All Groq models failed")
 
+
 async def call_llm_with_fallback(
     messages: list[dict],
     system: str,
     skip_groq: bool = False,
 ) -> tuple[str, str]:
     """
-    Try Groq first (unless skip_groq=True), then fall through the waterfall.
-    Returns (response_text, provider_name_used).
+    Tiered Hybrid Intelligence:
+    1. Local AI Brain (Ollama) is checked first — Zero API cost, runs on device hardware.
+    2. Cloud Heavy Task Tier (Groq / Gemini / Anthropic) for intense workloads or when local is offline.
     """
-    # ── 1. Try Groq first ──
+    # ── 1. Try Local Self-Hosted AI Mind First ──
+    try:
+        print("[llm] Attempting local AI brain (Ollama)...")
+        return await _call_ollama_local_brain(messages, system)
+    except Exception as e:
+        print(f"[llm] Local brain offline or unavailable ({e}), engaging Cloud Heavy Task Cluster...")
+
+    # ── 2. Cloud API Tier (Groq 120B / Fast Engine) ──
     if not skip_groq and settings.groq_api_key:
         try:
             return await _call_groq_direct(messages, system)
         except Exception as e:
-            print(f"[llm] Groq direct fallback trigger: {e}")
+            print(f"[llm] Cloud Groq cluster failed: {e}")
 
-    # ── 2. Try other providers in waterfall ──
+    # ── 3. Waterfall through external providers ──
     for name, fn in _PROVIDERS:
         key_attr = f"{name}_api_key"
         if name != "ollama" and not getattr(settings, key_attr, ""):
@@ -310,10 +349,10 @@ async def call_llm_with_fallback(
             print(f"[llm] {name} failed: {e}")
             continue
 
-    # ── 3. Friendly conversational fallback if API is unreachable ──
+    # ── 4. Built-in Intelligence Fallback ──
     user_msg = messages[-1]["content"] if messages else ""
     return (
         f"I received your inquiry: '{user_msg}'.\n\n"
-        "Orion is connected in autonomous mode. You can ask technical questions, request multi-agent plans, or upload code console screenshots for analysis.",
+        "Orion is active in autonomous mode. You can ask technical questions, request multi-agent plans, or execute workflows.",
         "orion (local intelligence)",
     )

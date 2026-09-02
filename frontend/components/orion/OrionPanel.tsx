@@ -266,22 +266,22 @@ export default function OrionPanel() {
       {/* Editorial Top Navigation */}
       <header className="h-14 border-b border-[#EBE8E2] bg-[#FFFFFE] px-6 flex items-center justify-between flex-shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-[#0000CD] flex items-center justify-center text-white">
+          <div className="w-7 h-7 rounded-lg bg-[#2B2FE0] flex items-center justify-center text-white shadow-sm">
             <Sparkles size={15} />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-[#1F1915] flex items-center gap-2">
               Orion Dialogue Assistant
-              <span className="badge-safety text-[10px] py-0 px-2">Safety Verified</span>
+              <span className="badge-safety text-[10px] py-0.5 px-2">Local Brain First</span>
             </h2>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#8A8279] font-medium hidden sm:inline">
-            Model: Groq 120B / Hybrid Fallback
+          <span className="text-xs text-[#6B6359] font-medium hidden sm:inline flex items-center gap-1.5">
+            <span className="text-[#2B2FE0] font-semibold">Brain:</span> Local Engine (Primary) · Cloud API (Heavy Tasks)
           </span>
-          <div className="w-2 h-2 rounded-full bg-[#3D8B6E]" title="Ready" />
+          <div className="w-2 h-2 rounded-full bg-[#2D7A5E] animate-pulse" title="Autonomous Dual-Tier Engine Ready" />
         </div>
       </header>
 

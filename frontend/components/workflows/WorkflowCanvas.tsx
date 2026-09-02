@@ -13,6 +13,8 @@ import {
   Edge,
   Node,
   BackgroundVariant,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -27,8 +29,8 @@ import {
   Check,
   LayoutTemplate,
   Loader2,
-  FolderPlus,
-  Trash2,
+  FolderOpen,
+  PlusCircle,
   AlertCircle,
 } from "lucide-react";
 
@@ -36,6 +38,8 @@ import { WorkflowNodeComponent } from "./CustomNodes";
 import NodePaletteModal from "./NodePaletteModal";
 import NodeConfigDrawer from "./NodeConfigDrawer";
 import ExecutionLogModal from "./ExecutionLogModal";
+import WorkflowListModal from "./WorkflowListModal";
+import TemplateModal from "./TemplateModal";
 import { useAuthStore } from "@/store/authStore";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -60,7 +64,7 @@ const TEMPLATES = [
       {
         id: "node_http",
         type: "custom",
-        position: { x: 380, y: 160 },
+        position: { x: 420, y: 160 },
         data: {
           type: "http_request",
           name: "Fetch REST API",
@@ -74,7 +78,7 @@ const TEMPLATES = [
       {
         id: "node_ai",
         type: "custom",
-        position: { x: 720, y: 160 },
+        position: { x: 780, y: 160 },
         data: {
           type: "llm_agent",
           name: "AI Summarizer",
@@ -109,7 +113,7 @@ const TEMPLATES = [
       {
         id: "node_code",
         type: "custom",
-        position: { x: 380, y: 180 },
+        position: { x: 420, y: 180 },
         data: {
           type: "code_function",
           name: "Python Logic",
@@ -122,7 +126,7 @@ const TEMPLATES = [
       {
         id: "node_branch",
         type: "custom",
-        position: { x: 720, y: 180 },
+        position: { x: 780, y: 180 },
         data: {
           type: "condition_if",
           name: "Validate Output",
@@ -154,7 +158,7 @@ const TEMPLATES = [
       {
         id: "node_ai",
         type: "custom",
-        position: { x: 420, y: 160 },
+        position: { x: 460, y: 160 },
         data: {
           type: "llm_agent",
           name: "Security Critic",
@@ -181,7 +185,7 @@ function sanitizeNodes(rawNodes: any[]): Node[] {
       typeof n.position.x === "number" &&
       typeof n.position.y === "number"
         ? n.position
-        : { x: 80 + (idx % 4) * 320, y: 160 + Math.floor(idx / 4) * 160 };
+        : { x: 60 + (idx % 3) * 360, y: 160 + Math.floor(idx / 3) * 180 };
 
     return {
       id: String(n.id || `node_${idx}_${Date.now()}`),
@@ -210,13 +214,13 @@ function sanitizeEdges(rawEdges: any[]): Edge[] {
   }));
 }
 
-export default function WorkflowCanvas() {
+function InnerWorkflowCanvas() {
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [currentWorkflow, setCurrentWorkflow] = useState<any | null>(null);
   const [workflowName, setWorkflowName] = useState("AI Data Extraction Pipeline");
   const [nodeSchemas, setNodeSchemas] = useState<any[]>([]);
 
-  // React Flow state with guaranteed sanitized nodes & edges
+  // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState<any>(
     sanitizeNodes(TEMPLATES[0].nodes)
   );
@@ -227,6 +231,8 @@ export default function WorkflowCanvas() {
   // UI Modals & Drawers
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isLogsOpen, setIsLogsOpen] = useState(false);
+  const [isWorkflowListOpen, setIsWorkflowListOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [executions, setExecutions] = useState<any[]>([]);
   const [lastExecutionResult, setLastExecutionResult] = useState<any | null>(null);
@@ -236,6 +242,7 @@ export default function WorkflowCanvas() {
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [errorBanner, setErrorBanner] = useState("");
 
+  const { fitView } = useReactFlow();
   const nodeTypes = useMemo(() => ({ custom: WorkflowNodeComponent }), []);
 
   const getAuthHeaders = () => {
@@ -297,8 +304,11 @@ export default function WorkflowCanvas() {
         const wf = await res.json();
         setCurrentWorkflow(wf);
         setWorkflowName(wf.name);
-        setNodes(sanitizeNodes(wf.nodes || []));
-        setEdges(sanitizeEdges(wf.edges || []));
+        const sNodes = sanitizeNodes(wf.nodes || []);
+        const sEdges = sanitizeEdges(wf.edges || []);
+        setNodes(sNodes);
+        setEdges(sEdges);
+        setTimeout(() => fitView({ padding: 0.25 }), 100);
       }
     } catch (err) {
       console.error("Failed to load workflow details:", err);
@@ -312,11 +322,12 @@ export default function WorkflowCanvas() {
     setEdges(sanitizeEdges(tpl.edges));
     setCurrentWorkflow(null);
     setLastExecutionResult(null);
+    setTimeout(() => fitView({ padding: 0.25 }), 100);
   }
 
   // Create new blank workflow
   function handleNewBlank() {
-    setWorkflowName("Untitled Workflow");
+    setWorkflowName("New Automation Pipeline");
     setNodes(
       sanitizeNodes([
         {
@@ -335,6 +346,7 @@ export default function WorkflowCanvas() {
     setEdges([]);
     setCurrentWorkflow(null);
     setLastExecutionResult(null);
+    setTimeout(() => fitView({ padding: 0.25 }), 100);
   }
 
   const onConnect = useCallback(
@@ -445,31 +457,27 @@ export default function WorkflowCanvas() {
     }
   }
 
-  // Delete current workflow
-  async function handleDeleteWorkflow() {
-    if (!currentWorkflow?.id) {
-      handleNewBlank();
-      return;
-    }
-    if (!confirm("Are you sure you want to delete this workflow?")) return;
+  // Delete workflow
+  async function handleDeleteWorkflow(id: string) {
     try {
-      await fetch(`${API}/workflows/${currentWorkflow.id}`, {
+      await fetch(`${API}/workflows/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
         credentials: "include",
       });
       loadWorkflows();
-      handleNewBlank();
+      if (currentWorkflow?.id === id) {
+        handleNewBlank();
+      }
     } catch (err) {
       console.error("Delete error:", err);
     }
   }
 
-  // Execute workflow with 100% direct reliability
+  // Execute workflow with direct DAG engine
   async function handleExecute() {
     setExecuting(true);
     setErrorBanner("");
-    // Set all nodes to pulsing running status
     setNodes((nds) =>
       nds.map((n) => ({
         ...n,
@@ -478,7 +486,6 @@ export default function WorkflowCanvas() {
     );
 
     try {
-      // Execute in-memory graph directly
       const execRes = await fetch(`${API}/workflows/execute-direct`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -538,7 +545,6 @@ export default function WorkflowCanvas() {
     } catch (err: any) {
       console.error("Execution error:", err);
       setErrorBanner(err.message || "Execution failed");
-      // Reset statuses
       setNodes((nds) =>
         nds.map((n) => ({
           ...n,
@@ -600,39 +606,32 @@ export default function WorkflowCanvas() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-[#FAF9F5] relative">
       {/* Top Editorial Toolbar */}
-      <div className="h-14 border-b border-[#EBE8E2] bg-[#FFFFFE] px-6 flex items-center justify-between z-10 shadow-sm flex-shrink-0">
+      <div className="h-14 border-b border-[#EBE8E2] bg-[#FFFFFE] px-4 sm:px-6 flex items-center justify-between z-10 shadow-sm flex-shrink-0">
         {/* Left: Workflow Selector & Name */}
         <div className="flex items-center gap-2 sm:gap-3">
           <input
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="text-sm sm:text-base font-serif font-medium text-[#1F1915] bg-transparent hover:bg-[#FAF9F6] focus:bg-[#FAF9F6] border border-transparent focus:border-[#DDD9D1] rounded-lg px-2 py-1 outline-none transition-all max-w-[200px] sm:max-w-xs"
+            className="text-sm sm:text-base font-serif font-medium text-[#1F1915] bg-transparent hover:bg-[#FAF9F6] focus:bg-[#FAF9F6] border border-transparent focus:border-[#DDD9D1] rounded-lg px-2 py-1 outline-none transition-all max-w-[180px] sm:max-w-xs"
           />
 
-          {workflows.length > 0 && (
-            <select
-              value={currentWorkflow?.id || ""}
-              onChange={(e) => {
-                if (e.target.value) loadSingleWorkflow(e.target.value);
-              }}
-              className="text-xs bg-[#FAF9F6] border border-[#EBE8E2] rounded-lg px-2.5 py-1 text-[#6B6359] outline-none hidden md:inline"
-            >
-              <option value="">Saved Workflows ({workflows.length})...</option>
-              {workflows.map((wf) => (
-                <option key={wf.id} value={wf.id}>
-                  {wf.name}
-                </option>
-              ))}
-            </select>
-          )}
+          {/* My Workflows Drawer Trigger */}
+          <button
+            onClick={() => setIsWorkflowListOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#DDD9D1] bg-[#FAF9F6] hover:bg-[#F0EEE6] text-xs font-medium text-[#1F1915] transition-all shadow-sm"
+          >
+            <FolderOpen size={13} className="text-[#2B2FE0]" />
+            <span>Workflows ({workflows.length})</span>
+          </button>
 
+          {/* New Blank Pipeline Button */}
           <button
             onClick={handleNewBlank}
             title="Create New Blank Workflow"
             className="w-7 h-7 rounded-lg border border-[#DDD9D1] bg-[#FFFFFE] hover:bg-[#FAF9F6] text-[#6B6359] flex items-center justify-center transition-all shadow-sm"
           >
-            <FolderPlus size={14} />
+            <PlusCircle size={14} />
           </button>
 
           {webhookUrl && (
@@ -654,10 +653,9 @@ export default function WorkflowCanvas() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          {/* Templates */}
+          {/* Templates Modal Trigger */}
           <button
-            onClick={() => loadTemplate(TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)])}
-            title="Load Pre-configured Template"
+            onClick={() => setIsTemplateModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#DDD9D1] bg-[#FFFFFE] hover:bg-[#FAF9F6] text-xs font-medium text-[#1F1915] shadow-sm transition-all"
           >
             <LayoutTemplate size={13} className="text-[#2B2FE0]" />
@@ -759,6 +757,23 @@ export default function WorkflowCanvas() {
       </div>
 
       {/* Modals & Drawers */}
+      <WorkflowListModal
+        isOpen={isWorkflowListOpen}
+        onClose={() => setIsWorkflowListOpen(false)}
+        workflows={workflows}
+        currentWorkflowId={currentWorkflow?.id || null}
+        onSelectWorkflow={loadSingleWorkflow}
+        onNewWorkflow={handleNewBlank}
+        onDeleteWorkflow={handleDeleteWorkflow}
+      />
+
+      <TemplateModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        templates={TEMPLATES}
+        onSelectTemplate={loadTemplate}
+      />
+
       <NodePaletteModal
         isOpen={isPaletteOpen}
         onClose={() => setIsPaletteOpen(false)}
@@ -780,5 +795,13 @@ export default function WorkflowCanvas() {
         executions={executions}
       />
     </div>
+  );
+}
+
+export default function WorkflowCanvas() {
+  return (
+    <ReactFlowProvider>
+      <InnerWorkflowCanvas />
+    </ReactFlowProvider>
   );
 }

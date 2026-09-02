@@ -49,13 +49,13 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
   if (nodeType === "http_request") {
     subtitle = `${parameters.method || "GET"} ${parameters.url || "https://..."}`;
   } else if (nodeType === "llm_agent") {
-    subtitle = (parameters.prompt || "AI Prompt Template").slice(0, 32) + "...";
+    subtitle = (parameters.prompt || "AI Prompt Template").slice(0, 36) + "...";
   } else if (nodeType === "code_function") {
-    subtitle = "Python Custom Script";
+    subtitle = "Python Custom Transformation";
   } else if (nodeType === "webhook_trigger") {
-    subtitle = "HTTP Webhook Listener";
+    subtitle = "Incoming Webhook Listener";
   } else if (nodeType === "cron_trigger") {
-    subtitle = parameters.cron_expression || "Scheduled Trigger";
+    subtitle = parameters.cron_expression || "0 * * * * (Hourly)";
   } else if (nodeType === "condition_if") {
     subtitle = `If ${parameters.field || "ok"} ${parameters.operator || "is_truthy"}`;
   }
@@ -63,11 +63,11 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
   return (
     <div
       className={`
-        relative w-64 rounded-xl border bg-[#FFFFFE] shadow-warm-md transition-all duration-200
+        relative w-72 rounded-xl border bg-[#FFFFFE] shadow-warm-md transition-all duration-200 select-none
         ${selected ? "ring-2 ring-[#2B2FE0] border-[#2B2FE0] shadow-warm-lg" : "border-[#EBE8E2] hover:border-[#DDD9D1]"}
-        ${status === "running" ? "ring-2 ring-[#2B2FE0] animate-pulse" : ""}
-        ${status === "success" ? "border-[#2D7A5E] ring-1 ring-[#2D7A5E]/40" : ""}
-        ${status === "error" ? "border-[#DC2626] ring-1 ring-[#DC2626]/40" : ""}
+        ${status === "running" ? "ring-2 ring-[#2B2FE0] shadow-warm-lg animate-pulse" : ""}
+        ${status === "success" ? "border-[#2D7A5E] ring-2 ring-[#2D7A5E]/40" : ""}
+        ${status === "error" ? "border-[#DC2626] ring-2 ring-[#DC2626]/40" : ""}
       `}
     >
       {/* Target handle for input connections (if not trigger) */}
@@ -76,21 +76,21 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
           type="target"
           position={Position.Left}
           id="main"
-          className="!w-3 !h-3 !bg-[#2B2FE0] !border-2 !border-white shadow-sm"
+          className="!w-3.5 !h-3.5 !bg-[#2B2FE0] !border-2 !border-white shadow-sm"
         />
       )}
 
       {/* Node Header */}
-      <div className="p-3 border-b border-[#F5F2EB] flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className={`w-7 h-7 rounded-lg ${colors.bg} ${colors.text} flex items-center justify-center`}>
-            <IconComponent size={15} />
+      <div className="p-3.5 border-b border-[#F5F2EB] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-lg ${colors.bg} ${colors.text} flex items-center justify-center flex-shrink-0`}>
+            <IconComponent size={16} />
           </div>
-          <div>
-            <h4 className="text-xs font-semibold text-[#1F1915] leading-tight truncate max-w-[130px]">
+          <div className="min-w-0">
+            <h4 className="text-xs font-semibold text-[#1F1915] leading-tight truncate">
               {name}
             </h4>
-            <span className="text-[10px] text-[#8A8279] uppercase font-medium tracking-wider">
+            <span className="text-[10px] text-[#8A8279] uppercase font-semibold tracking-wider">
               {category}
             </span>
           </div>
@@ -99,16 +99,16 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
         {/* Status indicator badge */}
         <div>
           {status === "running" && (
-            <Loader2 size={14} className="text-[#2B2FE0] animate-spin" />
+            <Loader2 size={16} className="text-[#2B2FE0] animate-spin" />
           )}
           {status === "success" && (
-            <CheckCircle2 size={14} className="text-[#2D7A5E]" />
+            <CheckCircle2 size={16} className="text-[#2D7A5E]" />
           )}
           {status === "error" && (
-            <AlertCircle size={14} className="text-[#DC2626]" />
+            <AlertCircle size={16} className="text-[#DC2626]" />
           )}
           {!status && (
-            <span className={`w-2 h-2 rounded-full ${colors.badge} inline-block opacity-60`} />
+            <span className={`w-2.5 h-2.5 rounded-full ${colors.badge} inline-block opacity-60`} />
           )}
         </div>
       </div>
@@ -116,7 +116,7 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
       {/* Node Body / Subtitle */}
       <div className="p-3 bg-[#FAF9F6] rounded-b-xl">
         <p className="text-[11px] text-[#6B6359] font-mono truncate">
-          {subtitle || "Click to configure parameters"}
+          {subtitle || "Click node to configure"}
         </p>
       </div>
 
@@ -128,14 +128,14 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
             position={Position.Right}
             id="true"
             style={{ top: "35%" }}
-            className="!w-3 !h-3 !bg-[#2D7A5E] !border-2 !border-white shadow-sm"
+            className="!w-3.5 !h-3.5 !bg-[#2D7A5E] !border-2 !border-white shadow-sm"
           />
           <Handle
             type="source"
             position={Position.Right}
             id="false"
             style={{ top: "65%" }}
-            className="!w-3 !h-3 !bg-[#DC2626] !border-2 !border-white shadow-sm"
+            className="!w-3.5 !h-3.5 !bg-[#DC2626] !border-2 !border-white shadow-sm"
           />
         </>
       ) : (
@@ -143,7 +143,7 @@ export const WorkflowNodeComponent = memo(({ id, data, selected }: NodeProps<any
           type="source"
           position={Position.Right}
           id="main"
-          className="!w-3 !h-3 !bg-[#2B2FE0] !border-2 !border-white shadow-sm"
+          className="!w-3.5 !h-3.5 !bg-[#2B2FE0] !border-2 !border-white shadow-sm"
         />
       )}
     </div>

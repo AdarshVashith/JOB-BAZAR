@@ -38,8 +38,13 @@ class Settings(BaseSettings):
     # Google OAuth
     google_client_id:     str | None = None
     google_client_secret: str | None = None
+
+    # GitHub OAuth
+    github_client_id:     str | None = None
+    github_client_secret: str | None = None
+
     backend_url:          str = "http://localhost:8000"
-    frontend_url:         str = "http://localhost:3000"
+    frontend_url:         str = "http://localhost:3001"
 
     # Supabase
     supabase_url: str | None = None

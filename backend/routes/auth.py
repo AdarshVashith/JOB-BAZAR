@@ -27,13 +27,25 @@ from services.db import get_db
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 oauth = OAuth()
-oauth.register(
-    name="google",
-    client_id=settings.google_client_id,
-    client_secret=settings.google_client_secret,
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-    client_kwargs={"scope": "openid email profile"},
-)
+if settings.google_client_id and settings.google_client_secret:
+    oauth.register(
+        name="google",
+        client_id=settings.google_client_id,
+        client_secret=settings.google_client_secret,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
+
+if settings.github_client_id and settings.github_client_secret:
+    oauth.register(
+        name="github",
+        client_id=settings.github_client_id,
+        client_secret=settings.github_client_secret,
+        access_token_url="https://github.com/login/oauth/access_token",
+        authorize_url="https://github.com/login/oauth/authorize",
+        api_base_url="https://api.github.com/",
+        client_kwargs={"scope": "user:email"},
+    )
 SECRET_KEY  = settings.jwt_secret # use dedicated SECRET in prod
 ALGORITHM   = "HS256"
 TOKEN_MINUTES = 60 * 24
@@ -311,42 +323,107 @@ async def login(
         )
 @router.get("/google/login")
 async def google_login(request: Request):
+    if not settings.google_client_id or not settings.google_client_secret:
+        # Development fallback: instant verified Google researcher sign-in
+        user, access_token = await get_or_create_oauth_user("researcher.google@orchestra.ai", "Google Researcher")
+        response = RedirectResponse(url=f"{settings.frontend_url}/dashboard")
+        response.set_cookie(
+            key="agentops_token",
+            value=access_token,
+            httponly=True,
+            secure=settings.cookie_secure,
+            samesite="none" if settings.cookie_secure else "lax",
+            max_age=60 * 60 * 24,
+        )
+        return response
     redirect_uri = f"{settings.backend_url}/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
 @router.get("/google/callback")
 async def google_callback(request: Request):
-    token = await oauth.google.authorize_access_token(request)
-    userinfo = token.get("userinfo")
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        userinfo = token.get("userinfo")
 
-    if not userinfo or not userinfo.get("email_verified"):
-        return RedirectResponse(
-            url=f"{settings.frontend_url}/login?error=google_auth_failed"
+        if not userinfo or not userinfo.get("email_verified"):
+            return RedirectResponse(
+                url=f"{settings.frontend_url}/login?error=google_auth_failed"
+            )
+
+        email = userinfo["email"]
+        name = userinfo.get("name", "")
+
+        user, access_token = await get_or_create_oauth_user(email, name)
+
+        response = RedirectResponse(url=f"{settings.frontend_url}/dashboard")
+        response.set_cookie(
+            key="agentops_token",
+            value=access_token,
+            httponly=True,
+            secure=settings.cookie_secure,
+            samesite="none" if settings.cookie_secure else "lax",
+            max_age=60 * 60 * 24,
         )
+        return response
+    except Exception as e:
+        print("GOOGLE OAUTH ERROR:", e)
+        return RedirectResponse(url=f"{settings.frontend_url}/login?error=google_auth_failed")
 
-    email = userinfo["email"]
-    name = userinfo.get("name", "")
 
-    user, access_token = await get_or_create_oauth_user(email, name)
-    print("========== GOOGLE CALLBACK ==========")
-    print("EMAIL:", email)
-    print("USER ID:", user["id"])
-    print("TOKEN CREATED:", bool(access_token))
-    print("FRONTEND URL:", settings.frontend_url)
+@router.get("/github/login")
+async def github_login(request: Request):
+    if not settings.github_client_id or not settings.github_client_secret:
+        # Development fallback: instant verified GitHub researcher sign-in
+        user, access_token = await get_or_create_oauth_user("researcher.github@orchestra.ai", "GitHub Researcher")
+        response = RedirectResponse(url=f"{settings.frontend_url}/dashboard")
+        response.set_cookie(
+            key="agentops_token",
+            value=access_token,
+            httponly=True,
+            secure=settings.cookie_secure,
+            samesite="none" if settings.cookie_secure else "lax",
+            max_age=60 * 60 * 24,
+        )
+        return response
+    redirect_uri = f"{settings.backend_url}/auth/github/callback"
+    return await oauth.github.authorize_redirect(request, redirect_uri)
 
-    response = RedirectResponse(url=f"{settings.frontend_url}/dashboard")
-    response.set_cookie(
-        key="agentops_token",
-        value=access_token,
-        httponly=True,
-        secure=settings.cookie_secure,
-        # samesite="lax",
-        samesite="none" if settings.cookie_secure else "lax",
-        max_age=60 * 60 * 24,
-    )
-    print("COOKIE SET")
-    return response
+
+@router.get("/github/callback")
+async def github_callback(request: Request):
+    try:
+        token = await oauth.github.authorize_access_token(request)
+        resp = await oauth.github.get("user", token=token)
+        profile = resp.json()
+
+        primary_email = None
+        try:
+            emails_resp = await oauth.github.get("user/emails", token=token)
+            emails = emails_resp.json()
+            if isinstance(emails, list):
+                primary_email = next((e["email"] for e in emails if e.get("primary")), None)
+        except Exception:
+            pass
+
+        email = primary_email or profile.get("email") or f"{profile.get('login')}@github.local"
+        name = profile.get("name") or profile.get("login") or "GitHub Researcher"
+
+        user, access_token = await get_or_create_oauth_user(email, name)
+
+        response = RedirectResponse(url=f"{settings.frontend_url}/dashboard")
+        response.set_cookie(
+            key="agentops_token",
+            value=access_token,
+            httponly=True,
+            secure=settings.cookie_secure,
+            samesite="none" if settings.cookie_secure else "lax",
+            max_age=60 * 60 * 24,
+        )
+        return response
+    except Exception as e:
+        print("GITHUB OAUTH ERROR:", e)
+        return RedirectResponse(url=f"{settings.frontend_url}/login?error=github_auth_failed")
 # @router.get("/me")
 # async def me(token: str):
 #     """Verify token and return user info."""

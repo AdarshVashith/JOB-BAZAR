@@ -325,22 +325,20 @@ export default function LoginPage() {
 
             {/* Social SSO Buttons */}
             <div className="grid grid-cols-2 gap-3 mb-5">
-              <button
-                type="button"
-                onClick={() => alert("Connecting to Google OAuth...")}
-                className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[#DDD9D1] bg-[#FFFFFE] hover:bg-[#FAF9F5] text-xs font-medium text-[#1F1915] transition-all shadow-sm"
+              <a
+                href={`${API}/auth/google/login`}
+                className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[#DDD9D1] bg-[#FFFFFE] hover:bg-[#FAF9F5] hover:border-[#2B2FE0] text-xs font-medium text-[#1F1915] transition-all shadow-sm group"
               >
                 <GoogleIcon />
-                <span>Google</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => alert("Connecting to GitHub OAuth...")}
-                className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[#DDD9D1] bg-[#FFFFFE] hover:bg-[#FAF9F5] text-xs font-medium text-[#1F1915] transition-all shadow-sm"
+                <span className="group-hover:text-[#2B2FE0]">Google</span>
+              </a>
+              <a
+                href={`${API}/auth/github/login`}
+                className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[#DDD9D1] bg-[#FFFFFE] hover:bg-[#FAF9F5] hover:border-[#2B2FE0] text-xs font-medium text-[#1F1915] transition-all shadow-sm group"
               >
                 <GitHubIcon />
-                <span>GitHub</span>
-              </button>
+                <span className="group-hover:text-[#2B2FE0]">GitHub</span>
+              </a>
             </div>
 
             {/* Divider */}

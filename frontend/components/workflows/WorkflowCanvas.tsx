@@ -172,15 +172,57 @@ const TEMPLATES = [
   },
 ];
 
+// Sanitizer to guarantee every node has a valid position: { x, y } and custom type
+function sanitizeNodes(rawNodes: any[]): Node[] {
+  if (!Array.isArray(rawNodes)) return [];
+  return rawNodes.map((n, idx) => {
+    const pos =
+      n.position &&
+      typeof n.position.x === "number" &&
+      typeof n.position.y === "number"
+        ? n.position
+        : { x: 80 + (idx % 4) * 320, y: 160 + Math.floor(idx / 4) * 160 };
+
+    return {
+      id: String(n.id || `node_${idx}_${Date.now()}`),
+      type: "custom",
+      position: pos,
+      data: {
+        type: n.data?.type || n.type || "http_request",
+        name: n.data?.name || n.name || "Workflow Node",
+        category: n.data?.category || n.category || "Action",
+        parameters: n.data?.parameters || n.parameters || {},
+        executionStatus: n.data?.executionStatus,
+      },
+    };
+  });
+}
+
+function sanitizeEdges(rawEdges: any[]): Edge[] {
+  if (!Array.isArray(rawEdges)) return [];
+  return rawEdges.map((e, idx) => ({
+    id: String(e.id || `e_${idx}_${Date.now()}`),
+    source: String(e.source),
+    target: String(e.target),
+    sourceHandle: e.sourceHandle || "main",
+    targetHandle: e.targetHandle || "main",
+    animated: e.animated !== undefined ? e.animated : true,
+  }));
+}
+
 export default function WorkflowCanvas() {
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [currentWorkflow, setCurrentWorkflow] = useState<any | null>(null);
   const [workflowName, setWorkflowName] = useState("AI Data Extraction Pipeline");
   const [nodeSchemas, setNodeSchemas] = useState<any[]>([]);
 
-  // React Flow state
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>(TEMPLATES[0].nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<any>(TEMPLATES[0].edges);
+  // React Flow state with guaranteed sanitized nodes & edges
+  const [nodes, setNodes, onNodesChange] = useNodesState<any>(
+    sanitizeNodes(TEMPLATES[0].nodes)
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState<any>(
+    sanitizeEdges(TEMPLATES[0].edges)
+  );
 
   // UI Modals & Drawers
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -255,8 +297,8 @@ export default function WorkflowCanvas() {
         const wf = await res.json();
         setCurrentWorkflow(wf);
         setWorkflowName(wf.name);
-        setNodes(wf.nodes || []);
-        setEdges(wf.edges || []);
+        setNodes(sanitizeNodes(wf.nodes || []));
+        setEdges(sanitizeEdges(wf.edges || []));
       }
     } catch (err) {
       console.error("Failed to load workflow details:", err);
@@ -266,8 +308,8 @@ export default function WorkflowCanvas() {
   // Load template
   function loadTemplate(tpl: (typeof TEMPLATES)[0]) {
     setWorkflowName(tpl.name);
-    setNodes(tpl.nodes);
-    setEdges(tpl.edges);
+    setNodes(sanitizeNodes(tpl.nodes));
+    setEdges(sanitizeEdges(tpl.edges));
     setCurrentWorkflow(null);
     setLastExecutionResult(null);
   }
@@ -275,19 +317,21 @@ export default function WorkflowCanvas() {
   // Create new blank workflow
   function handleNewBlank() {
     setWorkflowName("Untitled Workflow");
-    setNodes([
-      {
-        id: "node_trigger_init",
-        type: "custom",
-        position: { x: 80, y: 180 },
-        data: {
-          type: "manual_trigger",
-          name: "Manual Start",
-          category: "Trigger",
-          parameters: { test_payload: "{}" },
+    setNodes(
+      sanitizeNodes([
+        {
+          id: "node_trigger_init",
+          type: "custom",
+          position: { x: 80, y: 180 },
+          data: {
+            type: "manual_trigger",
+            name: "Manual Start",
+            category: "Trigger",
+            parameters: { test_payload: "{}" },
+          },
         },
-      },
-    ]);
+      ])
+    );
     setEdges([]);
     setCurrentWorkflow(null);
     setLastExecutionResult(null);

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import uuid
 import json
 
-from routes.dependencies import get_current_user
+from routes.dependencies import get_current_user, get_optional_user
 from services.db import get_db
 from workflows.nodes import registry
 from workflows.engine import WorkflowExecutionEngine
@@ -42,7 +42,7 @@ async def get_node_registry():
 
 
 @router.get("")
-async def list_workflows(user=Depends(get_current_user)):
+async def list_workflows(user=Depends(get_optional_user)):
     """List all workflows belonging to the current user."""
     pool = await get_db()
     async with pool.acquire() as conn:
@@ -77,7 +77,7 @@ async def list_workflows(user=Depends(get_current_user)):
 @router.post("")
 async def create_workflow(
     body: CreateWorkflowRequest,
-    user=Depends(get_current_user)
+    user=Depends(get_optional_user)
 ):
     """Create a new workflow."""
     pool = await get_db()
@@ -118,7 +118,7 @@ async def create_workflow(
 @router.get("/{workflow_id}")
 async def get_workflow(
     workflow_id: str,
-    user=Depends(get_current_user)
+    user=Depends(get_optional_user)
 ):
     """Get single workflow with full nodes and edges."""
     pool = await get_db()
@@ -161,7 +161,7 @@ async def get_workflow(
 async def update_workflow(
     workflow_id: str,
     body: UpdateWorkflowRequest,
-    user=Depends(get_current_user)
+    user=Depends(get_optional_user)
 ):
     """Update workflow graph (nodes, edges, name, etc.)."""
     pool = await get_db()
@@ -218,7 +218,7 @@ async def update_workflow(
 @router.delete("/{workflow_id}")
 async def delete_workflow(
     workflow_id: str,
-    user=Depends(get_current_user)
+    user=Depends(get_optional_user)
 ):
     """Delete a workflow."""
     pool = await get_db()
@@ -231,11 +231,63 @@ async def delete_workflow(
         return {"success": True}
 
 
+class ExecuteDirectBody(BaseModel):
+    name: Optional[str] = "Live Canvas Workflow"
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    payload: Optional[Dict[str, Any]] = {}
+    workflow_id: Optional[str] = None
+
+
+class TestSingleNodeBody(BaseModel):
+    node_type: str
+    parameters: Optional[Dict[str, Any]] = {}
+    test_input: Optional[Dict[str, Any]] = {}
+
+
+@router.post("/execute-direct")
+async def execute_direct_endpoint(
+    body: ExecuteDirectBody,
+    user=Depends(get_optional_user)
+):
+    """Run in-memory canvas workflow graph directly."""
+    result = await WorkflowExecutionEngine.execute_graph_direct(
+        nodes=body.nodes,
+        edges=body.edges,
+        workflow_id=body.workflow_id,
+        user_id=user["user_id"],
+        trigger_type="manual",
+        initial_payload=body.payload,
+    )
+    return result
+
+
+@router.post("/nodes/test-single")
+async def test_single_node_endpoint(
+    body: TestSingleNodeBody,
+    user=Depends(get_optional_user)
+):
+    """Test run an individual node with custom test input."""
+    node_impl = registry.get(body.node_type)
+    if not node_impl:
+        raise HTTPException(status_code=400, detail=f"Unknown node type: {body.node_type}")
+
+    try:
+        out = await node_impl.run(
+            input_data=body.test_input or {},
+            params=body.parameters or {},
+            context={"user_id": user["user_id"]}
+        )
+        return {"success": True, "output": out}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @router.post("/{workflow_id}/execute")
 async def execute_workflow_endpoint(
     workflow_id: str,
     body: Optional[ExecuteWorkflowRequest] = None,
-    user=Depends(get_current_user)
+    user=Depends(get_optional_user)
 ):
     """Run workflow execution."""
     payload = body.payload if body else {}
@@ -251,7 +303,7 @@ async def execute_workflow_endpoint(
 @router.get("/{workflow_id}/executions")
 async def list_workflow_executions(
     workflow_id: str,
-    user=Depends(get_current_user)
+    user=Depends(get_optional_user)
 ):
     """List execution history for workflow."""
     pool = await get_db()

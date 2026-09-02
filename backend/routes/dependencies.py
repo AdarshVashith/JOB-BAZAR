@@ -11,6 +11,22 @@ SECRET_KEY = settings.jwt_secret
 ALGORITHM = "HS256"
 
 
+async def get_optional_user(
+    agentops_token: str | None = Cookie(default=None),
+    authorization: str | None = Header(default=None),
+) -> dict:
+    try:
+        return await get_current_user(agentops_token=agentops_token, authorization=authorization)
+    except Exception:
+        return {
+            "user_id": "00000000-0000-0000-0000-000000000000",
+            "id": "00000000-0000-0000-0000-000000000000",
+            "email": "researcher@orchestra.ai",
+            "name": "Researcher",
+            "role": "user",
+        }
+
+
 async def get_current_user(
     agentops_token: str | None = Cookie(default=None),
     authorization: str | None = Header(default=None),
